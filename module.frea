@@ -1,0 +1,108 @@
+magic = "Hello From Another Module"
+
+data Maybe a
+  = Nothing
+  | Just a
+
+
+data IMaybe
+  = INothing
+  | IJust Int
+
+
+data Either a b
+  = Left a
+  | Right b
+
+data Oneof a b c
+  = A a
+  | B b
+  | C c
+
+
+data Wrong a b -- (a :: * -> *) (b :: *)
+  = One (a b)
+  | Two b
+
+data Worse a -- (a :: * -> *)
+  = First (a Int)
+
+-- (First (Left 23)) :: forall a . Worse (Either Int) a
+-- tohle nedava smysl
+-- Either Int neni type, chybi tam dalsi parametr
+-- absolutne nechapu kam se jako ztratil
+-- 
+-- ale podle GHC je to spravne
+
+data Bad a -- (a :: * -> * -> *)
+  = Ba (a Int Char)
+
+data Boo a b c = Bo (a b c)
+
+data Coo a = Co a
+
+
+data Malformed b = Con (Either b)
+
+
+data Experiment
+  = Try [Int]
+
+
+data IList
+  = Nil
+  | Int ::: IList
+
+
+showIList list = (which-IList list
+                    "Nil"
+                    ( \ head tail -> ( ((show head) ++ " ::: ") ++ (showIList tail) ) ))
+
+
+showMaybe maybe = (which-IMaybe maybe
+                    "Nothing"
+                    (\ v -> ("Just " ++ ((#show) v)) ))
+
+
+ihead lst =  (which-IList lst
+              INothing
+              (\ h t -> (IJust h)))
+
+
+imap fn lst =  (which-IList lst
+                Nil
+                (\ h t -> ((fn h) ::: (imap fn t))))
+
+
+sum ilist = (which-IList ilist
+              0
+              (\ head tail -> (head + (sum tail))))
+
+
+itake n lst = if (n == 0) then Nil else 
+                                    (which-IList lst
+                                      Nil
+                                      (\ h t -> (h ::: (itake (n - 1) t)))
+                                    )
+
+
+-- some examples
+
+ones = (1 ::: ones)
+
+list = (1 ::: (2 ::: (3 ::: (4 ::: (5 ::: Nil)))))
+
+double n = (n * 2)
+
+
+iif bool thenn elsee = (which-Boolean bool
+                        thenn
+                        elsee)
+
+
+fact n = if (n == 0) then 1 else (n * (fact (n - 1)))
+
+
+mayAdd n maybe = (which-IMaybe maybe
+                  INothing
+                  (\ v -> (IJust (v + n))))

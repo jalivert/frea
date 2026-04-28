@@ -1,0 +1,126 @@
+cabal-version: 1.12
+
+-- This file has been generated from package.yaml by hpack version 0.33.0.
+--
+-- see: https://github.com/sol/hpack
+--
+-- hash: 0c2df4e4b6b5f7187fa3e70311d364802dfc05e3494678ba1ae85dfc6c0f37c2
+
+name:           frea
+version:        0.1.0.0
+description:    Please see the README on GitHub at <https://github.com/githubuser/frea#readme>
+homepage:       https://github.com/githubuser/frea#readme
+bug-reports:    https://github.com/githubuser/frea/issues
+author:         Author name here
+maintainer:     example@example.com
+copyright:      2021 Author name here
+license:        BSD3
+license-file:   LICENSE
+build-type:     Simple
+extra-source-files:
+    ChangeLog.md
+    src/Compiler/Parser/Lexer.x
+    src/Compiler/Parser/Parser.y
+
+source-repository head
+  type: git
+  location: https://github.com/githubuser/frea
+
+library
+  exposed-modules:
+      Compiler.Parser.Lexer
+      Compiler.Parser.Parser
+      Compiler.Parser.Token
+      Compiler.Parser.Utils
+      Compiler.Syntax
+      Compiler.Syntax.Bind
+      Compiler.Syntax.Declaration
+      Compiler.Syntax.Expression
+      Compiler.Syntax.Kind
+      Compiler.Syntax.Literal
+      Compiler.Syntax.MatchGroup
+      Compiler.Syntax.Pattern
+      Compiler.Syntax.Signature
+      Compiler.Syntax.Type
+      Compiler.TypeAnalyzer.Analyze
+      Compiler.TypeAnalyzer.AnalyzeEnv
+      Compiler.TypeAnalyzer.AnalyzeState
+      Compiler.TypeAnalyzer.AnalyzeUtils
+      Compiler.TypeAnalyzer.Constraint
+      Compiler.TypeAnalyzer.Dependency
+      Compiler.TypeAnalyzer.Error
+      Compiler.TypeAnalyzer.Kind.Infer
+      Compiler.TypeAnalyzer.Kind.KindOf
+      Compiler.TypeAnalyzer.Solver
+      Compiler.TypeAnalyzer.Substituable
+      Compiler.TypeAnalyzer.Type.Analyze
+      Compiler.TypeAnalyzer.Type.Evaluate
+      Compiler.TypeAnalyzer.TypeOf
+      Compiler.TypeAnalyzer.Types
+      Interpreter.Address
+      Interpreter.Evaluate
+      Interpreter.Print
+      Interpreter.Value
+  other-modules:
+      Paths_frea
+  hs-source-dirs:
+      src
+  build-depends:
+      array
+    , base >=4.7 && <5
+    , containers >=0.6.2.1
+    , directory
+    , extra
+    , filepath
+    , hspec
+    , mtl
+    , transformers
+    , utf8-string
+  default-language: Haskell2010
+
+executable frea-exe
+  main-is: Main.hs
+  other-modules:
+      Paths_frea
+  hs-source-dirs:
+      app
+  ghc-options: -threaded -rtsopts -with-rtsopts=-N
+  build-depends:
+      array
+    , base >=4.7 && <5
+    , containers >=0.6.2.1
+    , directory
+    , extra
+    , filepath
+    , frea
+    , hspec
+    , mtl
+    , transformers
+    , utf8-string
+  default-language: Haskell2010
+
+test-suite frea-test
+  type: exitcode-stdio-1.0
+  main-is: Spec.hs
+  other-modules:
+      EvalSpec
+      InferenceSpec
+      ParserDeclSpec
+      ParserSpec
+      Paths_frea
+  hs-source-dirs:
+      test
+  ghc-options: -threaded -rtsopts -with-rtsopts=-N
+  build-depends:
+      array
+    , base >=4.7 && <5
+    , containers >=0.6.2.1
+    , directory
+    , extra
+    , filepath
+    , frea
+    , hspec
+    , mtl
+    , transformers
+    , utf8-string
+  default-language: Haskell2010
