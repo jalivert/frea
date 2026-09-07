@@ -8,13 +8,15 @@ import System.FilePath.Posix ((</>))
 
 import qualified Data.Map.Strict as Map
 import Data.Bifunctor (second)
-import Data.List (intercalate, reverse)
+import Data.List (intercalate, reverse, isPrefixOf, tails)
 import Data.List.Extra
 
 import Control.Monad (forM_)
 import Control.Monad.Reader
 import Control.Monad.Except
 import Control.Monad.State.Lazy
+import Control.Exception (SomeException, displayException, try)
+import qualified Control.Exception as E (evaluate)
 
 import Compiler.Parser.Parser (parse'expr, parse'type)
 import Compiler.Parser.Lexer (readToken)
@@ -40,6 +42,24 @@ main = do
   putStrLn "Glamorous Frea REPL."
   putStrLn ""
   load "prelude.frea" empty'env empty'an'env empty'memory
+
+
+-- | Parse user input without killing the REPL: the parser reports errors
+-- via `error`, so force the result and convert any exception to a message.
+tryParse :: String -> IO (Either String (Either [Declaration] Expression))
+tryParse s = do
+  res <- try (E.evaluate (parse'expr s))
+  case res of
+    Left err -> return . Left . trimStateDump $ displayException (err :: SomeException)
+    Right parsed -> return $ Right parsed
+
+
+-- | Drop the raw parser-state dump from error messages; keep the location.
+trimStateDump :: String -> String
+trimStateDump msg =
+  case [ i | (i, t) <- zip [0..] (tails msg), "ParseState" `isPrefixOf` t ] of
+    (i : _) -> take i msg
+    [] -> msg
 
 
 readExpression :: IO String
@@ -100,13 +120,19 @@ repl env e@AEnv{ kind'env = k'env, type'env = t'env, ali'env = ali'env } mem = d
 
     -- COMMAND :t(ype)
     ':' : 't' : line -> do
-      case parse'expr line of
-        Left _ -> do
+      parsed <- tryParse line
+      case parsed of
+        Left msg -> do
+          putStrLn $ "Parse Error: " ++ msg
+
+          -- loop
+          repl env e mem
+        Right (Left _) -> do
           putStrLn "Incorrect Format! The :t command must be followed by an expression, not a declaration."
 
           -- loop
           repl env e mem
-        Right expression -> do
+        Right (Right expression) -> do
           let error'or'scheme = run'analyze e (infer'expression expression)
           -- print
           case error'or'scheme of
@@ -123,33 +149,48 @@ repl env e@AEnv{ kind'env = k'env, type'env = t'env, ali'env = ali'env } mem = d
 
     -- COMMAND :k(ind)
     ':' : 'k' : line -> do
-      let t = parse'type line
-      let error'or'kind = kind'of e t -- infer'kind k'env t -- runExcept $ evalStateT (runReaderT (infer'kind t) k'env) init'infer
-      case error'or'kind of
+      parsed'type <- try (E.evaluate (parse'type line)) :: IO (Either SomeException Type)
+      case parsed'type of
         Left err -> do
-          putStrLn $ "Kind Error: " ++ show err
+          putStrLn $ "Parse Error: " ++ trimStateDump (displayException err)
 
           -- loop
           repl env e mem
+        Right t -> do
+          let error'or'kind = kind'of e t
+          case error'or'kind of
+            Left err -> do
+              putStrLn $ "Kind Error: " ++ show err
 
-        Right kind' -> do
-          putStrLn $ "         " ++ show t ++ " :: " ++ show kind'
+              -- loop
+              repl env e mem
 
-          -- loop
-          repl env e mem
+            Right kind' -> do
+              putStrLn $ "         " ++ show t ++ " :: " ++ show kind'
+
+              -- loop
+              repl env e mem
 
     -- EXPRESSION to typecheck and evaluate
     _ -> do
-      case parse'expr line of
-        Left declarations -> do
+      parsed <- tryParse line
+      case parsed of
+        Left msg -> do
+          putStrLn $ "Parse Error: " ++ msg
+
+          -- loop
+          repl env e mem
+        Right (Left declarations) -> do
           case run'analyze e (analyze'module declarations (env, mem)) of
             Left err -> do
               putStrLn $ "Error " ++ show err
-              return ()
+
+              -- loop
+              repl env e mem
             Right (an'env, e, m) ->
               repl e an'env m
 
-        Right expression -> do
+        Right (Right expression) -> do
           let error'or'scheme = run'analyze e (infer'expression expression)
           case error'or'scheme of
             Left err -> do
@@ -176,16 +217,26 @@ repl env e@AEnv{ kind'env = k'env, type'env = t'env, ali'env = ali'env } mem = d
 
 load :: String -> Env -> AnalyzeEnv -> Memory -> IO ()
 load file'name env a'env mem = do
-  handle <- openFile file'name ReadMode
-  contents <- hGetContents handle
-  case parse'expr contents of
-    Left declarations -> do
-      case run'analyze a'env (analyze'module declarations (env, mem)) of
-        Left err -> do
-          putStrLn $ "Error inside module " ++ file'name ++ ": " ++ show err
-          return ()
-        Right (an'env, e, m) ->
-          repl e an'env m
+  opened <- try (openFile file'name ReadMode) :: IO (Either SomeException Handle)
+  case opened of
+    Left err -> do
+      putStrLn $ "Error: cannot open " ++ file'name ++ ": " ++ displayException err
+      repl env a'env mem
+    Right handle -> do
+      contents <- hGetContents handle
+      parsed <- tryParse contents
+      case parsed of
+        Left msg -> do
+          putStrLn $ "Parse error inside module " ++ file'name ++ ": " ++ msg
+          repl env a'env mem
+        Right (Left declarations) -> do
+          case run'analyze a'env (analyze'module declarations (env, mem)) of
+            Left err -> do
+              putStrLn $ "Error inside module " ++ file'name ++ ": " ++ show err
+              repl env a'env mem
+            Right (an'env, e, m) ->
+              repl e an'env m
 
-    _ -> do
-      putStrLn $ "Error: " ++ file'name ++ " must only contain declarations."
+        Right (Right _) -> do
+          putStrLn $ "Error: " ++ file'name ++ " must only contain declarations."
+          repl env a'env mem
