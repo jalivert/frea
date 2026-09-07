@@ -10,6 +10,7 @@ import Data.List
 import Data.Functor.Identity
 import Data.Bifunctor (second)
 
+import Control.Monad
 import Control.Monad.State
 import Control.Monad.Reader
 import Control.Monad.Except

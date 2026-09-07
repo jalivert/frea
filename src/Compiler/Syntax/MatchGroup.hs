@@ -3,7 +3,8 @@
 {-# LANGUAGE UndecidableInstances #-}
 module Compiler.Syntax.MatchGroup where
 
-import Compiler.Syntax (Pattern, Expression)
+import Compiler.Syntax.Pattern (Pattern)
+import Compiler.Syntax.Expression (Expression)
 
 
 data MatchGroup = MG [Match]

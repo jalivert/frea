@@ -6,6 +6,7 @@ import Data.List
 import Data.Bifunctor (second)
 import Data.Functor.Identity
 
+import Control.Monad
 import Control.Monad.State
 import Control.Monad.Reader
 import Control.Monad.Except

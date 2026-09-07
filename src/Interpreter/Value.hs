@@ -79,12 +79,12 @@ empty'memory = Map.empty
 
 to'val'bool :: Bool -> Value
 to'val'bool True = Data "True" []
-to'val'bool False = Data "Fase" []
+to'val'bool False = Data "False" []
 
 
 from'val'bool :: Value -> Bool
 from'val'bool (Data "True" []) = True
-from'val'bool (Data "Fase" []) = False
+from'val'bool (Data "False" []) = False
 from'val'bool _ = error "Trying to convert non Boolean value to the Bool type!"
 
 

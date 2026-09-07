@@ -3,7 +3,7 @@
 {-# LANGUAGE UndecidableInstances #-}
 module Compiler.Syntax.Expression where
 
-import Compiler.Syntax (Lit, Type, MatchGroup)
+import Compiler.Syntax (Lit, Type)
 import Compiler.Syntax.Declaration
 import Data.List
 

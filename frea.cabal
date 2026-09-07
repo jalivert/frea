@@ -1,19 +1,15 @@
 cabal-version: 1.12
 
--- This file has been generated from package.yaml by hpack version 0.33.0.
---
--- see: https://github.com/sol/hpack
---
--- hash: 0c2df4e4b6b5f7187fa3e70311d364802dfc05e3494678ba1ae85dfc6c0f37c2
+-- Previously generated from package.yaml by hpack; now maintained by hand.
 
 name:           frea
 version:        0.1.0.0
-description:    Please see the README on GitHub at <https://github.com/githubuser/frea#readme>
-homepage:       https://github.com/githubuser/frea#readme
-bug-reports:    https://github.com/githubuser/frea/issues
-author:         Author name here
-maintainer:     example@example.com
-copyright:      2021 Author name here
+description:    Frea is a small programming language with Damas-Hindley-Milner type inference
+homepage:       https://github.com/jalivert/frea#readme
+bug-reports:    https://github.com/jalivert/frea/issues
+author:         Jan Liam Verter
+maintainer:     jali@verter.cz
+copyright:      2021 Jan Liam Verter
 license:        BSD3
 license-file:   LICENSE
 build-type:     Simple
@@ -24,7 +20,7 @@ extra-source-files:
 
 source-repository head
   type: git
-  location: https://github.com/githubuser/frea
+  location: https://github.com/jalivert/frea
 
 library
   exposed-modules:
@@ -104,9 +100,13 @@ test-suite frea-test
   main-is: Spec.hs
   other-modules:
       EvalSpec
+      ErrorSpec
       InferenceSpec
+      KindSpec
+      ModuleSpec
       ParserDeclSpec
       ParserSpec
+      TypeSynonymSpec
       Paths_frea
   hs-source-dirs:
       test

@@ -3,12 +3,14 @@ module Compiler.TypeAnalyzer.Kind.KindOf where
 
 import qualified Data.Map.Strict as Map
 
+import Control.Monad
 import Control.Monad.State
 import Control.Monad.Reader
 import Control.Monad.Except
 
 import Compiler.Syntax.Declaration
-import Compiler.Syntax
+import Compiler.Syntax.Type
+import Compiler.Syntax.Kind
 
 import Compiler.TypeAnalyzer.Analyze
 import Compiler.TypeAnalyzer.Constraint

@@ -2,7 +2,7 @@ module Interpreter.Evaluate where
 
 import Data.Either
 import Data.List
-import Data.Map.Strict ((!?), (!))
+import Data.Map.Strict ((!))
 import qualified Data.Map.Strict as Map
 import Control.Monad.State.Lazy
 
@@ -62,9 +62,9 @@ evaluate expr env =
   case expr of
     Var name -> do
       mem <- get
-      case env !? name of
+      case (Map.!?) env name of
         Just addr ->
-          case mem !? addr of
+          case (Map.!?) mem addr of
             Just val -> return $ Right val
             Nothing -> return $ Left $ Unexpected $ "Value of " ++ name ++ " not found in the memory for some reason."
         Nothing -> return $ Left $ UnboundVar name -- can't really happen thanks to the type system
@@ -84,7 +84,7 @@ evaluate expr env =
           register'binding env (name, _) =
             let addr = Addr $ Map.size env
             in Map.insert name addr env
-    
+
       construct'bindings bind'pairs env'
 
       -- TODO: do the same thing as for global bindings
@@ -167,7 +167,7 @@ evaluate expr env =
         Left err -> return $ Left err
 
     Ann _ expr -> evaluate expr env
-        
+
 
 apply'closure :: [Val.Value] -> Val.Value -> State Val.Memory (Either EvaluationError Val.Value)
 apply'closure [] val = return $ Right val

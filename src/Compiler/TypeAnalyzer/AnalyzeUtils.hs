@@ -4,6 +4,7 @@ module Compiler.TypeAnalyzer.AnalyzeUtils where
 import qualified Data.Set as Set
 import qualified Data.Map.Strict as Map
 
+import Control.Monad
 import Control.Monad.State
 import Control.Monad.Reader
 import Control.Monad.Except

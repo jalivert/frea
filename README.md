@@ -1,12 +1,14 @@
 # Frea
 
+[![CI](https://github.com/jalivert/frea/workflows/CI/badge.svg)](https://github.com/jalivert/frea/actions/workflows/ci.yml)
+
 A simple programming language with Damas-Hindley-Milner type inference.
 
-To compile: `$ stack build`
+To compile: `$ cabal build`
 
-To run: `$ stack run`
+To run: `$ cabal run frea-exe`
 
-To test: `$ stack test`
+To test: `$ cabal test`
 
 ## Examples:
 ### Maping over a list
