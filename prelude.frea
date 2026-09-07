@@ -151,13 +151,6 @@ module Main where
 
 ; test = 'c' == 'a' -- just for the future "regression prevention"
 
--- I would like to fix the following bug in the future
-
-; wrong :: Int -> a
-; wrong n = badbad n
-
-; badbad o = 23
-
 ; plus a b = a + b
 ; numnum = plus 23 42 -- this will have an incorrect type -- it is correct now
 
