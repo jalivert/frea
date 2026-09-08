@@ -24,10 +24,18 @@ jobs:
           path: |
             ~/.cabal/packages
             ~/.cabal/store
+            ~/.cabal/bin
             dist-newstyle
           key: ${{ runner.os }}-cabal-${{ hashFiles('frea.cabal') }}
           restore-keys: |
             ${{ runner.os }}-cabal-
+
+      - name: Install Alex and Happy
+        # The lexer (Lexer.x) and grammar (Parser.y) need preprocessing.
+        run: |
+          cabal update
+          cabal install alex happy
+          echo "$HOME/.cabal/bin" >> "$GITHUB_PATH"
 
       - name: Build
         run: cabal build all
