@@ -212,3 +212,10 @@ module system beyond single-file loading, no pattern-match syntax (use the
 `which-*` eliminators), no type classes, and no exhaustiveness checking.
 Parse errors are reported plainly without recovery. Within that scope, the
 typechecker and evaluator are well tested — see `test/`.
+
+One known soundness wart, kept as a documented limitation rather than
+fixed: type annotations are not checked rigidly. An over-general
+annotation such as `wrong :: Int -> a` is silently accepted (at
+`Int -> Int`) instead of being rejected, because annotated variables are
+instantiated flexibly during checking. Don't rely on annotations to
+constrain polymorphism.
