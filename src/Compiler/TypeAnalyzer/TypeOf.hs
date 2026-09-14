@@ -109,20 +109,27 @@ add'constrs'types result't (ConDecl name types : cons) t'env
 
 add'elim'type :: String -> Type -> [ConstrDecl] -> TypeEnv -> Analyze TypeEnv
 add'elim'type name result't constructors t'env = do
-  fresh'name <- fresh
+  -- The result variable must not coincide with any type variable already in
+  -- scope (e.g. the data type's parameters); `fresh` alone can return "a"
+  -- when the counter is still at zero and capture them.
+  res'name <- real'fresh (Set.toList $ free'vars (result't : concatMap con'arg'types constructors)) ()
   let elim'name     = "which-" ++ name
-      res           = TyVar fresh'name -- TODO: this needs to be fresh variable!!! -- for now making it somehow hard to mix up with anything
-      destr'type (ConDecl name types) = foldr TyArr res types
+      res           = TyVar res'name
+      destr'type (ConDecl con'name types) = foldr TyArr res types
+      destr'type _ = res
       destrs'types  = map destr'type constructors
       which'type    = result't `TyArr` (foldr TyArr res destrs'types)
       scheme        = generalize empty't'env which'type
-        
+
         -- ForAll (Set.toList $ free'vars which'type) which'type
       -- TODO: it would be much better to not create the scheme HERE
       -- it would also be much better to use already implemented functions like generalize and so
       -- TODO: once I implement higher kinded types, list of the free type variables needs to reflect that
       t'env'        = Map.insert elim'name scheme t'env
   return t'env'
+    where
+      con'arg'types (ConDecl _ types) = types
+      con'arg'types (ConFieldDecl _ fields) = map snd fields
 
 
 process'declarations :: [Declaration] -> Val.Env -> TypeEnv -> Val.Memory -> Analyze (Val.Env, TypeEnv, Val.Memory)

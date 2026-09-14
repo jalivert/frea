@@ -36,9 +36,13 @@ import qualified Compiler.TypeAnalyzer.Kind.Infer as K
 
 
 check :: Type -> Expression -> Analyze ((), [Constraint Type], [Constraint Kind])
-check t'Int (Lit (LitInt i)) = return ((), [], [])
-check t'Double (Lit (LitDouble i)) = return ((), [], [])
-check t'Char (Lit (LitChar i)) = return ((), [], [])
+check t (Lit (LitInt _)) = return ((), [(t, t'Int)], [])
+check t (Lit (LitDouble _)) = return ((), [(t, t'Double)], [])
+check t (Lit (LitChar _)) = return ((), [(t, t'Char)], [])
+
+check t (Ann type' expr) = do
+  (t'ann, constrs, k'cs) <- infer (Ann type' expr)
+  return ((), (t, t'ann) : constrs, k'cs)
 
 check t (Var x) = do
   -- for now just assume t is valid type of kind *
@@ -50,10 +54,13 @@ check t (Op x) = do
   type' <- lookup't'env x
   return ((), [(t, type')], [])
 
-check (from `TyArr` to) (Lam x body) = do
-  -- assume from :: * and to :: *
-  (t, constrs, k'constrs) <- put'in't'env (x, ForAll [] from) (check to body)
-  return ((), constrs, k'constrs)
+check t (Lam x body) = do
+  -- assume t :: *; relating it to an arrow exposes a mismatch (or an
+  -- over-general annotation) at solve time instead of crashing here
+  from <- TyVar <$> fresh
+  to <- TyVar <$> fresh
+  ((), constrs, k'constrs) <- put'in't'env (x, ForAll [] from) (check to body)
+  return ((), (t, from `TyArr` to) : constrs, k'constrs)
 
 check t (App left right) = do
   -- assume t :: *
@@ -76,10 +83,12 @@ check t (Let bind'pairs ex'body) = do
       
   return ((), t'constrs ++ cs'body, k'constrs ++ k'cs'body)
 
-check (TyTuple types') (Tuple exprs) = do
-  -- assume each type :: * where type isfrom types'
-  (cs, k'cs) <- foldM check' ([], []) (zip types' exprs)
-  return ((), cs, k'cs)
+check t (Tuple exprs) = do
+  -- assume t :: *; relating it to a tuple exposes length and shape
+  -- mismatches at solve time instead of truncating or crashing here
+  freshs <- mapM (\ _ -> TyVar <$> fresh) exprs
+  (cs, k'cs) <- foldM check' ([], []) (zip freshs exprs)
+  return ((), (t, TyTuple freshs) : cs, k'cs)
     where
       check' (constrs, k'constrs) (ty, expr) = do
         ((), cs, k'cs) <- check ty expr

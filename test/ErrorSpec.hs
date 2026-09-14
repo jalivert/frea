@@ -76,6 +76,9 @@ spec = describe "Test error cases" $ do
     it "Detects unbound variable" $ do
       "x" <::!> aEnv
 
+    it "Rejects annotation contradicting a literal" $ do
+      "(5 :: Bool)" <::!> aEnv
+
     it "Recursive self-application is valid (not an infinite type)" $ do
       -- NOTE: `let { f = \ x -> f x } in f` is a valid recursive definition
       -- (f :: a -> b); the occurs check does not fire here.

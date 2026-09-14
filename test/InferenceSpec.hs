@@ -236,6 +236,9 @@ spec = describe "Test the inference" $ do
       -- supported parenthesized form instead.
       "let { id = ((\\ x -> x) :: Int -> Int) } in id" <::> ForAll [] (TyArr t'Int t'Int)
 
+    it "Accepts nested annotations" $
+      "((1 :: Int) :: Int)" <::> ForAll [] t'Int
+
   describe "Operators" $ do
     it "Infers the type of infix operator" $
       "23 + 42" <::> ForAll [] t'Int
