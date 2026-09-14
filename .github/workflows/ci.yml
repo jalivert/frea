@@ -32,9 +32,11 @@ jobs:
 
       - name: Install Alex and Happy
         # The lexer (Lexer.x) and grammar (Parser.y) need preprocessing.
+        # Overwrite is needed because the cache above restores ~/.cabal/bin,
+        # so the binaries may already exist from a previous run.
         run: |
           cabal update
-          cabal install alex happy
+          cabal install --overwrite-policy=always alex happy
           echo "$HOME/.cabal/bin" >> "$GITHUB_PATH"
 
       - name: Build
