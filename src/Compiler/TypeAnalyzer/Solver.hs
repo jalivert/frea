@@ -14,6 +14,7 @@ import Compiler.Syntax.Kind
 
 import Compiler.TypeAnalyzer.Error
 import Compiler.TypeAnalyzer.Analyze
+import Compiler.TypeAnalyzer.AnalyzeState
 import Compiler.TypeAnalyzer.Substituable
 import Compiler.TypeAnalyzer.Constraint
 import Compiler.TypeAnalyzer.AnalyzeEnv
@@ -27,11 +28,11 @@ type Unifier a = (Subst a, [Constraint a])
 
 
 class Unifiable a where
-  unify :: a -> a -> Solve (Subst a)
+  unify :: RigidVars -> a -> a -> Solve (Subst a)
 
 
 class UnifiableComb a b where
-  unify'many :: a b -> a b -> Solve (Subst b)
+  unify'many :: RigidVars -> a b -> a b -> Solve (Subst b)
 
 
 class Occurable a where
@@ -39,65 +40,65 @@ class Occurable a where
 
 
 class Bindable a where
-  bind :: String -> a -> Solve (Subst a)
+  bind :: RigidVars -> String -> a -> Solve (Subst a)
 
 
-run'solve :: ((Substitutable a a), (Unifiable a)) => [Constraint a] -> Either Error (Subst a)
-run'solve constrs = runIdentity $ runExceptT $ solver state
+run'solve :: ((Substitutable a a), (Unifiable a)) => RigidVars -> [Constraint a] -> Either Error (Subst a)
+run'solve rig constrs = runIdentity $ runExceptT $ solver rig state
   where state = (empty'subst, constrs)
 
 
 -- Unification solver
-solver :: ((Substitutable a a), (Unifiable a)) => Unifier a -> Solve (Subst a)
-solver (subst, constraints) =
+solver :: ((Substitutable a a), (Unifiable a)) => RigidVars -> Unifier a -> Solve (Subst a)
+solver rig (subst, constraints) =
   case constraints of
     [] -> return subst
     ((type'l, type'r) : constrs) -> do
-      subst'  <- type'l `unify` type'r
-      solver (subst' `compose` subst, apply subst' constrs)
+      subst'  <- unify rig type'l type'r
+      solver rig (subst' `compose` subst, apply subst' constrs)
 
 
 instance Unifiable Type where
-  unify t1 t2 | t1 == t2 = return empty'subst
-  unify (TyVar v) t = v `bind` t
-  unify t (TyVar v) = v `bind` t
-  unify (TyArr t1 t2) (TyArr t3 t4) = [t1, t2] `unify'many` [t3, t4]
-  unify (TyApp t1 t2) (TyApp t3 t4) = [t1, t2] `unify'many` [t3, t4]
-  unify l@(TyCon name'l) r@(TyCon name'r)
+  unify _ t1 t2 | t1 == t2 = return empty'subst
+  unify rig (TyVar v) t = bind rig v t
+  unify rig t (TyVar v) = bind rig v t
+  unify rig (TyArr t1 t2) (TyArr t3 t4) = unify'many rig [t1, t2] [t3, t4]
+  unify rig (TyApp t1 t2) (TyApp t3 t4) = unify'many rig [t1, t2] [t3, t4]
+  unify _ l@(TyCon name'l) r@(TyCon name'r)
     | name'l == name'r = return empty'subst
     | otherwise = throwError $ TypeUnifMismatch l r
-  unify (TyTuple ts'left) (TyTuple ts'right)
+  unify rig (TyTuple ts'left) (TyTuple ts'right)
     = if length ts'left /= length ts'right
       then throwError $ TypeShapeMismatch (TyTuple ts'left) (TyTuple ts'right)
-      else ts'left `unify'many` ts'right
-  unify t1 t2 = throwError $ TypeShapeMismatch t1 t2
+      else unify'many rig ts'left ts'right
+  unify _ t1 t2 = throwError $ TypeShapeMismatch t1 t2
 
 
 instance Unifiable Kind where
-  unify t1 t2 | t1 == t2 = return empty'subst
-  unify (KVar v) k = v `bind` k
-  unify k (KVar v) = v `bind` k
-  unify (KArr k1 k2) (KArr k3 k4) = [k1, k2] `unify'many` [k3, k4]
-  unify Star Star = return empty'subst
-  unify t1 t2 = throwError $ KindShapeMismatch t1 t2
+  unify _ t1 t2 | t1 == t2 = return empty'subst
+  unify _ (KVar v) k = bind Map.empty v k
+  unify _ k (KVar v) = bind Map.empty v k
+  unify _ (KArr k1 k2) (KArr k3 k4) = unify'many Map.empty [k1, k2] [k3, k4]
+  unify _ Star Star = return empty'subst
+  unify _ t1 t2 = throwError $ KindShapeMismatch t1 t2
 
 
 instance UnifiableComb [] Type where
-  unify'many [] [] = return empty'subst
-  unify'many (t'l : ts'l) (t'r : ts'r) = do
-    su1 <- t'l `unify` t'r
-    su2 <- apply su1 ts'l `unify'many` apply su1 ts'r
+  unify'many _ [] [] = return empty'subst
+  unify'many rig (t'l : ts'l) (t'r : ts'r) = do
+    su1 <- unify rig t'l t'r
+    su2 <- unify'many rig (apply su1 ts'l) (apply su1 ts'r)
     return (su2 `compose` su1)
-  unify'many t'l t'r = throwError $ TypeUnifCountMismatch t'l t'r
+  unify'many _ t'l t'r = throwError $ TypeUnifCountMismatch t'l t'r
 
 
 instance UnifiableComb [] Kind where
-  unify'many [] [] = return empty'subst
-  unify'many (t'l : ts'l) (t'r : ts'r) = do
-    su1 <- t'l `unify` t'r
-    su2 <- apply su1 ts'l `unify'many` apply su1 ts'r
+  unify'many _ [] [] = return empty'subst
+  unify'many rig (t'l : ts'l) (t'r : ts'r) = do
+    su1 <- unify rig t'l t'r
+    su2 <- unify'many rig (apply su1 ts'l) (apply su1 ts'r)
     return (su2 `compose` su1)
-  unify'many t'l t'r = throwError $ KindUnifCountMismatch t'l t'r
+  unify'many _ t'l t'r = throwError $ KindUnifCountMismatch t'l t'r
 
 
 compose :: Substitutable a a => Subst a -> Subst a -> Subst a
@@ -128,14 +129,34 @@ instance Occurable Kind where
 
 
 instance Bindable Type where
-  bind varname type'
-    | type' == TyVar varname    = return empty'subst
+  bind rig varname type'
+    | type' == TyVar varname = return empty'subst
+    | Just display <- Map.lookup varname rig =
+        -- A rigid (annotation) variable unifies only with itself. Binding a
+        -- flexible variable to it is fine; anything else means the annotation
+        -- promises more polymorphism than the definition delivers.
+        case type' of
+          TyVar other | Map.notMember other rig ->
+            return $ Sub $ Map.singleton other (TyVar varname)
+          _ -> throwError $ AnnotationTooGeneral display (display'rigid rig type')
     | varname `occurs'in` type' = throwError $ InfiniteType (TyVar varname) type'
     | otherwise                 = return $ Sub $ Map.singleton varname type'
 
 
 instance Bindable Kind where
-  bind varname kind'
+  bind _ varname kind'
     | kind' == KVar varname     = return empty'subst
     | varname `occurs'in` kind' = throwError $ InfiniteKind (KVar varname) kind'
     | otherwise                 = return $ Sub $ Map.singleton varname kind'
+
+
+-- | Render a type for annotation errors, showing rigid variables by the
+-- user-written name they were skolemized from.
+display'rigid :: RigidVars -> Type -> Type
+display'rigid rig type' = case type' of
+  TyVar name -> TyVar $ Map.findWithDefault name name rig
+  TyCon name -> TyCon name
+  TyTuple types -> TyTuple $ map (display'rigid rig) types
+  TyArr left right -> TyArr (display'rigid rig left) (display'rigid rig right)
+  TyApp left right -> TyApp (display'rigid rig left) (display'rigid rig right)
+  TyOp par body -> TyOp par (display'rigid rig body)

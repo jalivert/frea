@@ -25,16 +25,16 @@ letters = [1..] >>= flip replicateM ['a'..'z']
 
 fresh :: Analyze String
 fresh = do
-  AnalizeState { count = counter } <- get
-  put $ AnalizeState { count = counter + 1 }
-  return (letters !! counter)
+  state <- get
+  put $ state { count = count state + 1 }
+  return (letters !! count state)
 
 
 real'fresh :: [String] -> a -> Analyze String
 real'fresh vars var = do
-  AnalizeState { count = counter } <- get
-  put $ AnalizeState { count = counter + 1 }
-  let name = letters !! counter
+  state <- get
+  put $ state { count = count state + 1 }
+  let name = letters !! count state
   if name `elem` vars
     then real'fresh vars var
     else return name
@@ -107,6 +107,33 @@ instantiate (ForAll args type') = do
   let ty'vars = map TyVar fresh'strs
   let subst = Sub $ Map.fromList $ zip args ty'vars
   return $ apply subst type'
+
+
+-- | Instantiate an annotation's quantified variables with fresh *rigid*
+-- (skolem) variables and record them for the enclosing constraint solves.
+-- A rigid variable unifies only with itself (or with a flexible variable
+-- that is bound to it), so checking the annotated expression against the
+-- skolemized type rejects over-general annotations instead of silently
+-- specializing them. The internal skolem name always contains a `#`,
+-- which flexible variables (plain letters) can never contain.
+skolemize :: Scheme -> Analyze Type
+skolemize (ForAll args body) = do
+  pairs <- mapM fresh'skolem args
+  state <- get
+  put $ state { rigid'vars = Map.fromList pairs `Map.union` rigid'vars state }
+  let subst = Sub $ Map.fromList [ (orig, TyVar skolem) | (skolem, orig) <- pairs ]
+  return $ apply subst body
+    where
+      fresh'skolem orig = do
+        uniq <- fresh
+        let skolem = orig ++ "#" ++ uniq
+        return (skolem, orig)
+
+
+-- | Rigid variables recorded so far, for the type-constraint solves that
+-- close over the annotations processed up to this point.
+get'rigid :: Analyze RigidVars
+get'rigid = rigid'vars <$> get
 
 
 closeOver :: Type -> Scheme

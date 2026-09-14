@@ -236,6 +236,9 @@ spec = describe "Test the inference" $ do
       -- supported parenthesized form instead.
       "let { id = ((\\ x -> x) :: Int -> Int) } in id" <::> ForAll [] (TyArr t'Int t'Int)
 
+    it "Respects polymorphic annotation" $
+      "((\\ x -> x) :: a -> a)" <::> ForAll ["a"] (TyVar "a" `TyArr` TyVar "a")
+
     it "Accepts nested annotations" $
       "((1 :: Int) :: Int)" <::> ForAll [] t'Int
 

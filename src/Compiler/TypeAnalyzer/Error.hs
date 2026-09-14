@@ -18,6 +18,11 @@ data Error
   | KindUnifCountMismatch [Kind] [Kind]
   | SynonymCycle [(String, Type)]
 
+  | AnnotationTooGeneral String Type
+  -- ^ An annotation variable (first argument, user-written name) had to
+  -- unify with the second argument, so the annotation is more general
+  -- than the definition it annotates.
+
   | Unexpected String
   deriving (Eq)
 
@@ -45,5 +50,8 @@ instance Show Error where
     = "Found a cycle in the type synonym declaration(s) of\n" ++ intercalate "\n" (map prnt aliases)
       where
         prnt (name, type') = "  type " ++ name ++ " = " ++ show type'
+  show (AnnotationTooGeneral var type')
+    = "The type annotation is too general: variable `" ++ var
+      ++ "` cannot match `" ++ show type' ++ "`"
   show (Unexpected s)
     = "Something bad happened: " ++ s

@@ -76,8 +76,20 @@ spec = describe "Test error cases" $ do
     it "Detects unbound variable" $ do
       "x" <::!> aEnv
 
+    it "Rejects over-general annotation" $ do
+      "((\\ x -> (#+ (x, 1))) :: Int -> a)" <::!> aEnv
+
+    it "Rejects annotation forcing distinct variables together" $ do
+      "((\\ x -> x) :: a -> b)" <::!> aEnv
+
     it "Rejects annotation contradicting a literal" $ do
       "(5 :: Bool)" <::!> aEnv
+
+    it "Rejects bare variable annotation on a lambda" $ do
+      "((\\ x -> x) :: a)" <::!> aEnv
+
+    it "Rejects bare variable annotation on a tuple" $ do
+      "((1, 2) :: a)" <::!> aEnv
 
     it "Recursive self-application is valid (not an infinite type)" $ do
       -- NOTE: `let { f = \ x -> f x } in f` is a valid recursive definition

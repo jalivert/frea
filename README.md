@@ -213,9 +213,8 @@ module system beyond single-file loading, no pattern-match syntax (use the
 Parse errors are reported plainly without recovery. Within that scope, the
 typechecker and evaluator are well tested — see `test/`.
 
-One known soundness wart, kept as a documented limitation rather than
-fixed: type annotations are not checked rigidly. An over-general
-annotation such as `wrong :: Int -> a` is silently accepted (at
-`Int -> Int`) instead of being rejected, because annotated variables are
-instantiated flexibly during checking. Don't rely on annotations to
-constrain polymorphism.
+Type annotations are checked rigidly: an annotation's variables are
+skolemized while checking the annotated definition, so an over-general
+annotation such as `wrong :: Int -> a` on an `Int -> Int` definition is
+rejected instead of being silently specialized. Annotations may still
+specialize a polymorphic definition (e.g. `(\ x -> x) :: Int -> Int`).

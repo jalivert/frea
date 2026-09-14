@@ -121,6 +121,28 @@ spec = describe "Test module loading and analysis" $ do
             ]
       checkRight $ run'analyze aEnv (analyze'module decls (empty'env, testMemory))
 
+    it "Analyzes a specialized annotation" $ do
+      let decls =
+            [ Annotated "ident" (TyCon "Int" `TyArr` TyCon "Int") (Lam "x" (Var "x"))
+            ]
+      checkRight $ run'analyze aEnv (analyze'module decls (empty'env, testMemory))
+
+    it "Analyzes a polymorphic annotation" $ do
+      let decls =
+            [ Annotated "identPoly" (TyVar "a" `TyArr` TyVar "a") (Lam "x" (Var "x"))
+            ]
+      checkRight $ run'analyze aEnv (analyze'module decls (empty'env, testMemory))
+
+    it "Rejects an over-general annotation" $ do
+      let decls =
+            [ Annotated "wrong" (TyCon "Int" `TyArr` TyVar "a")
+                (Lam "x" (App (Op "#+") (Tuple [Var "x", Lit (LitInt 1)])))
+            ]
+      case run'analyze aEnv (analyze'module decls (empty'env, testMemory)) of
+        Left (AnnotationTooGeneral var ty) -> (var, ty) `shouldBe` ("a", TyCon "Int")
+        Left err -> expectationFailure $ "wrong error: " ++ show err
+        Right _ -> expectationFailure "expected the over-general annotation to be rejected"
+
     it "Rejects an annotation contradicting a literal" $ do
       let decls = [Annotated "five" (TyCon "Bool") (Lit (LitInt 5))]
       case run'analyze aEnv (analyze'module decls (empty'env, testMemory)) of
