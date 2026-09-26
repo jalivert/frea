@@ -20,7 +20,7 @@ frea λ > let { fact = \ n -> if n == 0 then 1 else n * (fact (n - 1)) } in fact
 - **Type synonyms** with cycle detection
 - **Lazy evaluation** with thunk memoization (infinite lists work)
 - **REPL** with `:t` (infer type) and `:k` (infer kind) commands
-- **262-example test suite** covering parsing, inference, kinds, synonyms, modules, and evaluation
+- **260-example test suite** covering parsing, inference, kinds, synonyms, modules, and evaluation
 
 ## Quick start
 
@@ -148,22 +148,6 @@ frea λ > let { double = \ x -> 2 * x
          [2, 4, 6]
 ```
 
-### Type annotations
-
-Top-level bindings and parenthesized expressions can be annotated:
-
-```haskell
-module Main where
-{ len :: List a -> Int
-; len lst = which-List lst 0 (\ h t -> 1 + (len t)) }
-```
-
-```haskell
-frea λ > :t ((\ x -> x) :: Int -> Int)
-
-         ((\ x -> x) :: Int -> Int) :: Int -> Int
-```
-
 ### Laziness
 
 Evaluation is lazy and memoized, so infinite structures are fine:
@@ -213,9 +197,5 @@ module system beyond single-file loading, no pattern-match syntax (use the
 Parse errors are reported plainly without recovery. Within that scope, the
 typechecker and evaluator are well tested — see `test/`.
 
-One known soundness wart, kept as a documented limitation rather than
-fixed: type annotations are not checked rigidly. An over-general
-annotation such as `wrong :: Int -> a` is silently accepted (at
-`Int -> Int`) instead of being rejected, because annotated variables are
-instantiated flexibly during checking. Don't rely on annotations to
-constrain polymorphism.
+There are no type annotations in the surface language: every type is
+inferred (use `:t` to inspect them).

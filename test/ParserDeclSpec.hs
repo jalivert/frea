@@ -2,6 +2,7 @@ module ParserDeclSpec where
 
 import Test.Hspec
 import System.Exit
+import Control.Exception (evaluate)
 
 import Compiler.Parser.Parser (parse'expr)
 import Compiler.Syntax.Declaration
@@ -32,9 +33,12 @@ spec = describe "Test parsing of the declarations" $ do
       "module Main where { la ++ lb = la }" <=>
         Binding "++" (Lam "la" (Lam "lb" (Var "la")))
 
-    it "Parses annotated function declaration" $ do
-      "module Main where { foo :: Int -> Int ; foo x = x }" <=>
-        Annotated "foo" (TyArr (TyCon "Int") (TyCon "Int")) (Lam "x" (Var "x"))
+    it "Rejects annotated function declaration" $ do
+      -- NOTE: type annotations were removed from the surface language;
+      -- the annotation syntax no longer parses (the parser reports
+      -- errors via `error`, hence `shouldThrow`).
+      evaluate (parse'expr "module Main where { foo :: Int -> Int ; foo x = x }")
+        `shouldThrow` anyException
 
     it "Parses multiple declarations" $ do
       "module Main where { a = 1 ; b = 2 }" <=>*

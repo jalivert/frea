@@ -226,19 +226,6 @@ spec = describe "Test the inference" $ do
     it "Infers the type of list append" $
       "let { append = \\ a b -> which-List a b (\\ h t -> h : (append t b)) } in append" <::> ForAll ["a"] (TyArr (TyApp (TyCon "List") (TyVar "a")) (TyArr (TyApp (TyCon "List") (TyVar "a")) (TyApp (TyCon "List") (TyVar "a"))))
 
-  describe "Type annotations" $ do
-    it "Respects explicit type annotation on expression" $
-      "((\\ x -> x) :: Int -> Int)" <::> ForAll [] (TyArr t'Int t'Int)
-
-    it "Respects explicit type annotation on let binding" $
-      -- NOTE: `let { id :: ... ; ... }` is not supported in expression-lets
-      -- (Annotation ';' Binding only exists at top-level Fun). Test the
-      -- supported parenthesized form instead.
-      "let { id = ((\\ x -> x) :: Int -> Int) } in id" <::> ForAll [] (TyArr t'Int t'Int)
-
-    it "Accepts nested annotations" $
-      "((1 :: Int) :: Int)" <::> ForAll [] t'Int
-
   describe "Operators" $ do
     it "Infers the type of infix operator" $
       "23 + 42" <::> ForAll [] t'Int

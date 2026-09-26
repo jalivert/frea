@@ -2,6 +2,7 @@ module ParserSpec where
 
 import Test.Hspec
 import System.Exit
+import Control.Exception (evaluate)
 
 import Compiler.Parser.Parser (parse'expr)
 import Compiler.Syntax.Expression
@@ -168,14 +169,13 @@ spec = describe "Test the parser" $ do
           (App (App (Var "plus") (Lit (LitInt 23))) (Lit (LitInt 42)))
 
   describe "Type annotations" $ do
-    it "Parses annotated expression" $ do
-      "(23 :: Int)" <=>
-        Ann (TyCon "Int") (Lit (LitInt 23))
-    it "Parses annotated lambda" $ do
-      -- NOTE: annotation applies to the whole parenthesized expression,
-      -- i.e. `(exp :: Type)` parses as `Ann Type exp`.
-      "(\\ x -> x :: Int -> Int)" <=>
-        Ann (TyArr (TyCon "Int") (TyCon "Int")) (Lam "x" (Var "x"))
+    it "Rejects annotated expression" $ do
+      -- NOTE: type annotations were removed from the surface language;
+      -- the annotation syntax no longer parses (the parser reports
+      -- errors via `error`, hence `shouldThrow`).
+      evaluate (parse'expr "(23 :: Int)") `shouldThrow` anyException
+    it "Rejects annotated lambda" $ do
+      evaluate (parse'expr "(\\ x -> x :: Int -> Int)") `shouldThrow` anyException
 
   describe "Operators as expressions" $ do
     it "Parses operator section" $ do

@@ -121,13 +121,7 @@ spec = describe "Test module loading and analysis" $ do
             ]
       checkRight $ run'analyze aEnv (analyze'module decls (empty'env, testMemory))
 
-    it "Rejects an annotation contradicting a literal" $ do
-      let decls = [Annotated "five" (TyCon "Bool") (Lit (LitInt 5))]
-      case run'analyze aEnv (analyze'module decls (empty'env, testMemory)) of
-        Left _ -> pure ()
-        Right _ -> expectationFailure "expected the contradicting literal annotation to be rejected"
-
-    it "Analyzes a recursive polymorphic annotation over a generated eliminator" $ do
+    it "Analyzes a recursive function over a generated eliminator" $ do
       -- Regression: the eliminator's result variable must not capture the
       -- data type's parameters (a lone `data List a` used to generate
       -- `List a -> a -> ...` instead of `List a -> b -> ...`).
@@ -135,7 +129,7 @@ spec = describe "Test module loading and analysis" $ do
           lenBody = Lam "lst" (App (App (App (Var "which-List") (Var "lst")) (Lit (LitInt 0)))
                         (Lam "h" (Lam "t" (App (Op "#+") (Tuple [Lit (LitInt 1), App (Var "len") (Var "t")])))))
           decls = [ listDecl
-                  , Annotated "len" (TyApp (TyCon "List") (TyVar "a") `TyArr` TyCon "Int") lenBody
+                  , Binding "len" lenBody
                   ]
       case run'analyze aEnv (analyze'module decls (empty'env, testMemory)) of
         Left err -> expectationFailure $ "expected len to typecheck, got: " ++ show err

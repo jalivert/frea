@@ -172,7 +172,6 @@ AppLeft         ::  { Expression }
                 |   '[' NoneOrManySeparated(Exp) ']'                { foldr (\ item acc -> App (App (Var ":") item) acc ) (Var "[]") $2 }
                 -- wiring the List type into the compiler
                 |   '(' Application ')'                             { $2 }
-                |   '(' Exp '::' Type ')'                           { Ann $4 $2 }
 
 AppRight        ::  { Expression }
                 :   AppLeft                                         { $1 }
@@ -185,7 +184,6 @@ Binding         ::  { (String, Expression) }
                 
 Fun             ::  { Declaration }
                 :   Binding                                         { Binding (fst $1) (snd $1) }
-                |   Annotation ';' Binding                          { Annotated (fst $3) (snd $1) (snd $3) }
 
 Lit             ::  { Expression }
                 :   Integer                                         { Lit $1 }
@@ -198,10 +196,6 @@ Integer         ::  { Lit }
 
 Double          ::  { Lit }
                 :   double                                          { LitDouble $1 }
-
-Annotation      ::  { (String, Type) }
-                :   LowIdent '::' Type                              { ($1, $3) }
-                -- |   '(' Op ')' '::' Type                            { ($2, $5) }
 
 Type            ::  { Type }
                 :   TyAppLeft                                       { $1 }

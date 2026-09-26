@@ -63,27 +63,20 @@ module Main where
 -- ; bar = Left 'a'
 
 
-; concat :: String -> String -> String
 ; concat left right = left ++ right
 
-; tt :: Klo Char Int
 ; tt = Left 'a'
-; oo :: Klo Char String
 ; oo = ll
-; ll :: Either Char String
 ; ll = Right "hello"
 
-; (&&) :: Bool -> Bool -> Bool
 ; a && b = (which-Bool a
             b
             False)
 
-; (||) :: Bool -> Bool -> Bool
 ; a || b = (which-Bool a
             True
             b)
 
-; (==) :: h -> h -> Bool
 ; a == b  = (#= (a, b))
 
 ; a < b  = (#< (a, b))

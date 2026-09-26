@@ -94,9 +94,6 @@ spec = describe "Test type synonyms and type evaluation" $ do
     it "Infers type of String literal" $ do
       "\"hello\"" <::> const (ForAll [] (TyApp (TyCon "List") (TyCon "Char")))
 
-    it "Infers type of annotated String" $ do
-      "(\"hello\" :: String)" <::> const (ForAll [] (TyApp (TyCon "List") (TyCon "Char")))
-
     it "Infers type of function using String" $ do
       -- NOTE: frea infix is n-ary; parenthesize the applied arg.
       "let { len = \\ s -> which-List s 0 (\\ h t -> 1 + (len t)) } in len" <::> const (ForAll ["a"] (TyApp (TyCon "List") (TyVar "a") `TyArr` TyCon "Int"))
