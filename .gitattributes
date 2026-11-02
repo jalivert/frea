@@ -1,3 +1,3 @@
-*.x linguist-language=Alex
-*.y linguist-language=Happy
+*.x linguist-detectable=false
+*.y linguist-detectable=false
 *.frege linguist-detectable=false
